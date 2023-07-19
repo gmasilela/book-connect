@@ -1,289 +1,379 @@
-import { BOOKS_PER_PAGE, authors, genres, books } from "./data.js"; //Imported variables from the data.js file
+import { BOOKS_PER_PAGE, authors, genres, books } from "./data.js";
 
-let matches = books;          //The matches variable is linked with the books array meaning it contains the entire book list
-let page = 1;                //The page variable is initialized with the value 1, indicating the current page.
-const range = [0, 35];       //indicates that the books are 36, the array will start to count from 0-35
+/**
+ * CONSTANTS
+ * Constants using the `querySelector()` method to select elements from
+ * the Document Object Model (DOM) using data attributes
+ */
+const dataHeaderSearch = document.querySelector('[data-header-search]')
+const dataHeaderSettings = document.querySelector('[data-header-settings]')
+const dataListItems = document.querySelector('[data-list-items]')
+const dataListMessage = document.querySelector('[data-list-message]')
+const dataListButton = document.querySelector('[data-list-button]')
+const dataListActive = document.querySelector('[data-list-active]')
+const dataListBlur = document.querySelector('[data-list-blur]')
+const dataListImage = document.querySelector('[data-list-image]') 
+const dataListTitle = document.querySelector('[data-list-title]')
+const dataListSubtitle = document.querySelector('[data-list-subtitle]')
+const dataListDescription = document.querySelector('[data-list-description]')
+const dataListClose = document.querySelector('[data-list-close]')
+const dataSearchOverlay = document.querySelector('[data-search-overlay]')
+const dataSearchForm = document.querySelector('[data-search-form]')
+const dataSearchTitle = document.querySelector('[data-search-title]')
+const dataSearchGenres = document.querySelector('[data-search-genres]')
+const dataSearchAuthors = document.querySelector('[data-search-authors]')
+const dataSearchCancel = document.querySelector('[data-search-cancel]')
+const dataSettingsOverlay = document.querySelector('[data-settings-overlay]')
+const dataSettingsForm = document.querySelector('[data-settings-form]')
+const dataSettingsTheme = document.querySelector('[data-settings-theme]')
+const dataSettingsCancel = document.querySelector('[data-settings-cancel]')
 
-if (!books || !Array.isArray(books)) {          //checks if the book variable is present and an array if not it will throws ana error
-  throw new Error('Source required');
+/**
+ * PREVIEW BOOKS
+ * This code is implementing a "Show More" feature for a list of books.
+ * It initially displays 36 book previews on a page, and then when the 
+ * user clicks "Show More" button, it displays the next 36 books
+ */
+
+let matches = books
+let page = 1;     //used to keep track of current page of book reviews being displayed
+const range = [0, BOOKS_PER_PAGE]  
+
+if (!books && !Array.isArray(books)) {
+    throw new Error('Source required')
 }
 
-if (!range || range.length < 2) {
-  throw new Error('Range must be an array with two numbers');     //checks if the range variable is present and and has the mentioned values if not it throws an error
+if (!range && range.length === 2) {
+    throw new Error('Range must be an array with two numbers')
 }
 
-const day = {
-  dark: '10, 10, 20',
-  light: '255, 255, 255',            // day and night are for the theme of the webapp
-};
+/**
+ * The createPreview() function takes a book preview object and returns 
+ * a button element containing the book preview information in HTML form
+ */
+function createPreview(preview) {
+    const { author: authorId, id, image, title } = preview
 
-const night = {
-  dark: '255, 255, 255',
-  light: '10, 10, 20',
-};
+    const showPreview = document.createElement('button')
+    showPreview.classList = 'preview'
+    showPreview.setAttribute('data-preview', id)
 
-const fragment = document.createDocumentFragment();
-const extracted = books.slice(0, 36);; //...........extract a portion of an array and return a new array containing the extracted elements.......
+    showPreview.innerHTML = /* html */ `
+        <img
+            class="preview__image"
+            src="${image}"
+        />
 
-//author, image, and title properties are assigned to the dataOfBooks object and assigns them to variables with the same names
-function createPreview(dataOfBooks) {
-  const { author, image, title } = dataOfBooks;
+        <div class="preview__info">
+            <h3 class="preview__title">${title}</h3>
+            <div class="preview__author">${authors[authorId]}</div>
+        </div>
+    `
 
-  const preview = document.createElement('books');
-  preview.classList.add('preview');
-
-  const previewImage = document.createElement('img');
-  previewImage.src = image;
-  preview.appendChild(previewImage);
-
-  const previewTitle = document.createElement('h1');
-  previewTitle.textContent = title;
-  preview.appendChild(previewTitle);
-
-  const previewAuthor = document.createElement('h4');
-  previewAuthor.textContent = authors[author];
-  preview.appendChild(previewAuthor);
-  return preview;
+    return showPreview
 }
 
-//createPreviewFragment function is defined with three parameters: data, start, and end
-//Creates a new document fragment to store the preview elements.
-//repeat over the data array specified by the start and end
-//Calls the createPreview function with an object containing the extracted properties as arguments.
-function createPreviewFragment(data, start, end) {
-  const fragment = document.createDocumentFragment();
 
-  for (let i = start; i < end && i < data.length; i++) {
-    const { author, image, title, id } = data[i];
+const startIndex = (page - 1) * BOOKS_PER_PAGE
+const endIndex = startIndex + BOOKS_PER_PAGE
 
-    const preview = createPreview({
-      author,
-      id,
-      image,
-      title
-    });
+const bookFragment = document.createDocumentFragment()
+const bookExtracted = books.slice(startIndex, endIndex)
 
-    fragment.appendChild(preview);
-  }
-
-  return fragment;
+/**
+ * This loop iterates over the book previews to display on the current page, 
+ * creates a book preview button using the createPreview function, and 
+ * appends the button to the bookFragment container
+ */
+for (const preview of bookExtracted) {
+    const showPreview = createPreview(preview)
+    bookFragment.appendChild(showPreview)
 }
 
-//loop that repetition over the matches array
-//Destructures the author, image, title, and id properties from the current element
-for (let i = 0; i < extracted.length; i++) {
-  const { author, image, title, id } = extracted[i];
+dataListItems.appendChild(bookFragment)
 
-  const preview = createPreview({
-    author,
-    id,
-    image,
-    title
-  });
+/**
+ * This sets up a click event listener for the "Show More" button. When clicked, 
+ * the code executes the logic to display the next set of book previews.
+ */
+dataListButton.addEventListener('click', () => {
+    page++;
 
-  fragment.appendChild(preview);
-}
+    const newStartIndex = (page - 1) * BOOKS_PER_PAGE
+    const newEndIndex = newStartIndex + BOOKS_PER_PAGE
 
-document.querySelector('[data-list-items]').appendChild(fragment);    //adds the generated fragment, which contains preview elements, to the selected element in the code
+    const newBookExtracted = books.slice(newStartIndex, newEndIndex)
 
-const genresFragment = document.createDocumentFragment();        //create a dropdown menu for genres, where the "All Genres" option is the first option in the list
-let element = document.createElement('option'); 
-element.value = 'any';
-element.innerText = 'All Genres';
-genresFragment.appendChild(element);
+    const newBookFragment = document.createDocumentFragment()
 
-for (const [id, name] of Object.entries(genres)) {       //For each entry, it creates an option element and assigns the id and name values to the value and inner text content respectively
-  element = document.createElement('option');
-  element.value = id;
-  element.innerText = name;
-  genresFragment.appendChild(element);
-}
-
-//.....used to activate the Search button...............
-
-document.querySelector('[data-search-genres]').appendChild(genresFragment);
-
-const authorsFragment = document.createDocumentFragment();
-element = document.createElement('option');
-element.value = 'any';
-element.innerText = 'All Authors';
-authorsFragment.appendChild(element);
-
-for (const [id, name] of Object.entries(authors)) {
-  element = document.createElement('option');
-  element.value = id;
-  element.innerText = name;
-  authorsFragment.appendChild(element);
-}
-
-document.querySelector('[data-search-authors]').appendChild(authorsFragment);
-
-//..........day and night Theme................
-
-const v = document.querySelector('[data-settings-form]').addEventListener('submit', (event) => {
-  event.preventDefault();
-  const formData = new FormData(event.target);
-  const result = Object.fromEntries(formData);
-  document.documentElement.style.setProperty('--color-dark', css[v].dark);
-  document.documentElement.style.setProperty('--color-light', css[v].light);
-  document.querySelector('[data-settings-overlay]').open = false;
-});
-
-//update the button's text, disabled state, and HTML content
-
-document.querySelector('[data-list-button]').textContent = `Show more (${Math.max(0, matches.length - page * BOOKS_PER_PAGE)})`;
-document.querySelector('[data-list-button]').disabled === !(matches.length - page * BOOKS_PER_PAGE > 0);
-document.querySelector('[data-list-button]').innerHTML = `
-  <span>Show more</span>
-  <span class="list__remaining">(${Math.max(0, matches.length - page * BOOKS_PER_PAGE)})</span>
-`;
-
-document.querySelector('[data-search-cancel]').addEventListener('click', () => {
-  if (!document.querySelector('[data-search-overlay]').showModal()) {
-    // Handle the click event
-  }
-});
-
-document.querySelector('[data-settings-cancel]').addEventListener('click', () => {
-  if (!document.querySelector('[data-settings-overlay]').showModal().open()) {
-    // Handle the click event
-  }
-});
-
-document.querySelector('[data-settings-form]').addEventListener('submit', (event) => {
-  event.preventDefault();
-  // Handle the form submission
-});
-
-document.querySelector('[data-list-close]').addEventListener('click', () => {
-  if (!document.querySelector('[data-list-active]').showModal().open()) {
-    // Handle the click event
-  }
-});
-
-//calculates the start and end indices for the portion of the matches array to display based on the current page and the number of books per page
-document.querySelector('[data-list-button]').addEventListener('click', () => {
-  const start = page * BOOKS_PER_PAGE;
-  const end = (page + 1) * BOOKS_PER_PAGE;
-  const fragment = createPreviewFragment(matches, start, end);
-  document.querySelector('[data-list-items]').appendChild(fragment);
-  document.querySelector('[data-list-button]').textContent = `Show more (${Math.max(0, matches.length - (page + 1) * BOOKS_PER_PAGE)})`;
-  document.querySelector('[data-list-button]').disabled = !(matches.length - (page + 1) * BOOKS_PER_PAGE > 0);
-  page++;
-});
-
-document.querySelector('[data-header-search]').addEventListener('click', () => {    // from here
-  if (document.querySelector('[data-search-overlay]').showModal()) {
-    document.querySelector('[data-search-title]').focus();
-  }
-});
-
-document.querySelector('[data-search-cancel]').addEventListener('click', () => {
-    document.querySelector('[data-search-overlay]').close();
-   });
-                                                                                       //until here its the search button
-
-//this code handles the click events on the settings-related elements.
-//When data-header-settings is clicked, it shows the settings overlay and focuses on a specific element data-settings-theme
-//When data-settings-cance is clicked, it closes or hides the settings overlay.
-
-document.querySelector('[data-header-settings]').addEventListener('click', () => {
-    if (document.querySelector('[data-settings-overlay]').showModal()) {
-      document.querySelector('[data-settings-theme]').focus();
+    for (const preview of newBookExtracted) {
+        const showPreview = createPreview(preview)
+        newBookFragment.appendChild(showPreview)
     }
-  });
 
-  document.querySelector('[data-settings-cancel]').addEventListener('click', () => {
-    document.querySelector('[data-settings-overlay]').close();
-   });
+    dataListItems.appendChild(newBookFragment);
 
-document.querySelector('[data-search-form]').addEventListener('submit', (event) => { //code for the data drach form
-  event.preventDefault();
-  const formData = new FormData(event.target);
-  const filters = Object.fromEntries(formData);
-  const result = [];
+    const remaining = matches.length - page * BOOKS_PER_PAGE;
+    dataListButton.innerHTML = /* HTML */ `
+      <span>Show more</span>
+      <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
+    `;
 
-//this code applies filters to the books array and creates a result array containing the books that match the specified criteria
+    dataListButton.disabled = remaining <= 0;
+})
 
-  for (const book of books) {
-    const titleMatch = filters.title.trim() === '' || book.title.toLowerCase().includes(filters.title.toLowerCase());
-    const authorMatch = filters.author === 'any' || book.author === filters.author;
-    let genreMatch = false;
 
-    if (filters.genre === 'any') {
-      genreMatch = true;
-    } else {
-      for (const genre of book.genres) {
-        if (genre === filters.genre) {
-          genreMatch = true;
+dataListButton.innerHTML = /* HTML */
+    `<span>Show more</span>
+    <span class="list__remaining"> (${matches.length - [page * BOOKS_PER_PAGE] > 0 ? matches.length - [page * BOOKS_PER_PAGE] : 0})</span>
+    `;
+
+
+/**
+ * BOOK SUMMARY
+ */
+
+
+// When dataListItems is clicked, it shows a modal by invoking showModal() on dataListActive.
+dataListItems.addEventListener('click', (event) => {
+    dataListActive.showModal()
+    let pathArray = Array.from(event.path || event.composedPath())
+    let active;
+  
+    for (const node of pathArray) {
+      if (active) break;
+      const id = node?.dataset?.preview
+      
+      for (const singleBook of books) {
+        if (singleBook.id === id) {
+          active = singleBook
           break;
         }
       }
     }
-
-    if (titleMatch && authorMatch && genreMatch) {
-      result.push(book);
-    }
-  }
-
-  if (result.length < 1) {
-    document.querySelector('[data-list-message]').classList.add('list__message');
-  } else {
-    document.querySelector('[data-list-message]').classList.remove('list__message');
-  }
-
-  //this code updates the list of items displayed, updates the state and content of the "Show more" button 
-  //based on the number of remaining items, scrolls the window to the top, and closes the search overlay
   
-  document.querySelector('[data-list-items]').innerHTML = '';
-  const fragment = createPreviewFragment(result, range[0], range[1]);
-  document.querySelector('[data-list-items]').appendChild(fragment);
-  const initial = Math.max(0, result.length - page * BOOKS_PER_PAGE);
-  const remaining = result.length > page * BOOKS_PER_PAGE ? initial : 0;
+    if (!active) return;
+    dataListImage.src = active.image;
+    dataListBlur.src = active.image;
+    dataListTitle.textContent = active.title; 
+    dataListSubtitle.textContent = `${authors[active.author]} (${new Date(active.published).getFullYear()})`
+    dataListDescription.textContent = active.description;
+})
 
-  document.querySelector('[data-list-button]').disabled = initial > 0;
 
-  document.querySelector('[data-list-button]').innerHTML = `
-    <span>Show more</span>
-    <span class="list__remaining">(${remaining})</span>
-  `;
+//When dataListClose is clicked, it closes the modal by invoking close() on dataListActive.
+dataListClose.addEventListener('click', () => {
+    dataListActive.close()
+})
 
-  window.scrollTo(0, 0);
-  document.querySelector('[data-search-overlay]').open() = false;
-});
 
-// this code handles the click event on the data-list-items element and its descendants
-//It looks for a clicked element with a dataset.preview attribute
-//matches it with a book from the 'books' array, and updates various elements 
-//in the DOM to display the details of the selected book
-document.querySelector('[data-list-items]').addEventListener('click', (event) => {
-  const pathArray = Array.from(event.path || event.composedPath());
-  let active = null;
+/**
+ * GENRES AND AUTHORS
+ * This code creates a document fragment for each 'genres' and 'authors'.
+ * It sets the value of the option to "any" and the inner text to "All Genres" and "All Authors" 
+ * respectively. It then loops through an object and creates an option element for each entry, 
+ * setting the value to the entry's key and the inner text to its value. 
+ * These option elements are added to the fragment, and the fragment is then 
+ * appended to a dataSearchGenres element and dataSearchAuthors element.
+ */
 
-  for (const node of pathArray) {
-    const previewId = node?.dataset?.preview;
+//When dataHeaderSearch is clicked, it shows a modal by invoking showModal() on dataSearchOverlay
+dataHeaderSearch.addEventListener('click', () => {
+    dataSearchOverlay.showModal()
+    dataSearchTitle.focus()
+})
 
-    for (const singleBook of books) {
-      if (singleBook.id === previewId) {
-        active = singleBook;
-        break;
-      }
+//When dataSearchCancel is clicked, it closes modal by invoking close() on dataSearchOverlay
+dataSearchCancel.addEventListener('click', () => { 
+    dataSearchOverlay.close()
+})
+
+const genresFragment = document.createDocumentFragment()
+const genreElement = document.createElement('option')
+genreElement.value = 'any'
+genreElement.innerText = 'All Genres'
+genresFragment.appendChild(genreElement)
+
+for (const [id] of Object.entries(genres)) {
+    const genreElement = document.createElement('option')
+    genreElement.value = id
+    genreElement.innerText = genres[id]
+    genresFragment.appendChild(genreElement)
+}
+
+dataSearchGenres.appendChild(genresFragment)
+
+const authorsFragment = document.createDocumentFragment()
+const authorsElement = document.createElement('option')
+authorsElement.value = 'any'
+authorsElement.innerText = 'All Authors'
+authorsFragment.appendChild(authorsElement)
+
+for (const [id] of Object.entries(authors)) {
+    const authorsElement = document.createElement('option')
+    authorsElement.value = id
+    authorsElement.innerText = authors[id]
+    authorsFragment.appendChild(authorsElement)
+}
+
+dataSearchAuthors.appendChild(authorsFragment)
+
+
+/**
+ * FILTER BOOKS BY TITLE, GENRE AND AUTHOR
+ * This code sets an event listener for a search form element, dataSearchForm. 
+ * When the form is submitted, the event listener prevents the default form 
+ * submission behavior and instead executes a search using the provided form data.
+ */
+
+dataSearchForm.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const formData = new FormData(event.target)
+    const filters = Object.fromEntries(formData)
+    const result = []
+    
+    /**
+     * The for loop checks if any of the filters matches with the books and 
+     * if its true the book gets pushed to the result array .
+     */
+    for (const book of books) {
+        const titleMatch = filters.title.trim() !== '' && book.title.toLowerCase().includes(filters.title.toLowerCase())
+        const genreMatch = filters.genre !== 'any' && book.genres.includes(filters.genre)
+        const authorMatch = filters.author !== 'any' && book.author.includes(filters.author)
+  
+        if (titleMatch || authorMatch || genreMatch) {
+            result.push(book)
+        }
     }
 
-    if (active) {
-      break;
+    let page = 1
+    /**
+     * This if statement checks the result array and the result length is equal to 0 none 
+     * of the books will be displayed and the "Show More" button will be disabled. Else if 
+     * the result length is not equal to 0, the list of previews are created and displayed
+     * on the page.
+     */
+    if (result.length === 0) {
+        dataListItems.innerHTML = ''
+        dataListButton.disabled = true 
+        dataListMessage.classList.add('list__message_show')
+
+        const remaining = result.length - page * BOOKS_PER_PAGE;
+        dataListButton.innerHTML = /* HTML */ `
+            <span>Show more</span>
+            <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
+        `;
+    } else {
+        dataListMessage.classList.remove('list__message_show')
+        dataListItems.innerHTML = ''
+
+        const searchStartIndex = (page - 1) * BOOKS_PER_PAGE
+        const searchEndIndex = searchStartIndex + BOOKS_PER_PAGE
+
+        const searchBookFragment = document.createDocumentFragment()
+        const searchBookExtracted = result.slice(searchStartIndex, searchEndIndex)
+
+        /**
+        * This loop iterates over the book previews to display on the current page, 
+        * creates a book preview button using the createPreview function, and 
+        * appends the button to the bookFragment container
+        */
+        for (const preview of searchBookExtracted) {
+            const showPreview = createPreview(preview)
+            searchBookFragment.appendChild(showPreview)
+        }
+        
+        dataListItems.appendChild(searchBookFragment)
+        
+        const remaining = result.length - page * BOOKS_PER_PAGE;
+        dataListButton.innerHTML = /* HTML */ `
+        <span>Show more</span>
+        <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
+        `;
+
+        dataListButton.disabled = remaining <= 0;
+
+        /**
+         * This sets up a click event listener for the "Show More" button. When clicked, 
+         * the code executes the logic to display the next set of book previews.
+         */
+        dataListButton.addEventListener('click', () => {
+            page++;
+        
+            const moreSearchStartIndex = (page - 1) * BOOKS_PER_PAGE
+            const moreSearchEndIndex = moreSearchStartIndex + BOOKS_PER_PAGE
+        
+            const moreSearchBookExtracted = result.slice(moreSearchStartIndex, moreSearchEndIndex)
+        
+            const moreSearchBookFragment = document.createDocumentFragment()
+        
+            for (const preview of moreSearchBookExtracted) {
+                const showPreview = createPreview(preview)
+                moreSearchBookFragment.appendChild(showPreview)
+            }
+
+            dataListItems.appendChild(moreSearchBookFragment);
+        
+            const remaining = result.length - page * BOOKS_PER_PAGE;
+            dataListButton.innerHTML = /* HTML */ `
+              <span>Show more</span>
+              <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
+            `;
+        
+            dataListButton.disabled = remaining <= 0;
+        })
     }
-  }
 
-  if (!active) {
-    return;
-  }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    dataSearchOverlay.close()
+    dataSearchForm.reset()
+})
 
-  document.querySelector('[data-list-active]').showModal();
-document.querySelector('[data-list-blur]').src = active.image;
-document.querySelector('[data-list-title]').textContent = active.title;
-document.querySelector('[data-list-subtitle]').textContent = `${authors[active.author]} (${new Date(active.published).getFullYear()})`;
-document.querySelector('[data-list-description]').textContent = active.description;
 
-});
+/** 
+ * THEME SELECT
+ * This code sets up event listeners and handles form submissions for a 
+ * data settings overlay. When the header for the overlay is clicked, the 
+ * overlay is shown. When the cancel button is clicked, the overlay is closed.
+ * 
+ */
 
+dataHeaderSettings.addEventListener('click', () => {
+    dataSettingsOverlay.showModal()
+})
+
+dataSettingsCancel.addEventListener('click', () => { 
+    dataSettingsOverlay.close()
+})
+
+//The css object defines two themes, 'day' and 'night'
+const css = {
+    day : ['255, 255, 255', '10, 10, 20'],
+    night: ['10, 10, 20', '255, 255, 255']
+}
+
+//The value of the dataSettingsTheme input is determined based on whether the user's preferred color scheme is dark or not.
+dataSettingsTheme.value = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'day'
+let v = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'day'
+
+/**
+ * This code sets up for a submit event listener. When the form is submitted, the selected 
+ * object is created by converting the form data to an object using Object.fromEntries(). 
+ * Depending on the theme selected, the --color-light and --color-dark CSS variables are 
+ * updated with the corresponding light and dark color values from the css object
+ */
+dataSettingsForm.addEventListener('submit', (event) => { 
+    event.preventDefault()
+    const formSubmit = new FormData(event.target)
+    const selected = Object.fromEntries(formSubmit)
+
+    if (selected.theme === 'night') {
+        document.documentElement.style.setProperty('--color-light', css[selected.theme][0])
+        document.documentElement.style.setProperty('--color-dark', css[selected.theme][1])     
+    } else if (selected.theme === 'day') {
+        document.documentElement.style.setProperty('--color-light', css[selected.theme][0])
+        document.documentElement.style.setProperty('--color-dark', css[selected.theme][1])
+    }
+
+    dataSettingsOverlay.close()
+})
