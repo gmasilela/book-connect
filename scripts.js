@@ -218,7 +218,6 @@ for (const [id] of Object.entries(authors)) {
 
 dataSearchAuthors.appendChild(authorsFragment)
 
-
 /**
  * FILTER BOOKS BY TITLE, GENRE AND AUTHOR
  * This code sets an event listener for a search form element, dataSearchForm. 
